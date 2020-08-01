@@ -10,6 +10,7 @@ import {
 } from "sequelize"
 import bcrypt from "bcrypt"
 import Videos from "./videos"
+import Comment from "./comments"
 import connection from "../database"
 
 interface UserAttributes {
@@ -17,20 +18,25 @@ interface UserAttributes {
   username: string
   email: string
   password: string
+  subscribers: number
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, "id"> {}
+interface UserCreationAttributes
+  extends Optional<UserAttributes, "id" | "subscribers"> {}
 
 class User extends Model<UserAttributes, UserCreationAttributes> {
   public id!: string
   public username!: string
+  public subscribers!: number
   public email!: string
   public password!: string
+  public videos!: Videos
   public readonly createdAt!: Date
   public readonly updatedAt!: Date
 
   public static associations: {
     videos: Association<User, Videos>
+    comments: Association<User, Comment>
   }
 
   /**
@@ -57,6 +63,10 @@ User.init(
     username: DataTypes.STRING,
     email: DataTypes.STRING,
     password: DataTypes.STRING,
+    subscribers: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
   },
   {
     sequelize: connection as Sequelize,

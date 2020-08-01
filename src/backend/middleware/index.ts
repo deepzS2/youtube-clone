@@ -28,6 +28,14 @@ export function middleware(req: Request, res: Response, next: NextFunction) {
   if (req.cookies && req.cookies.token) {
     return next()
   } else if (req.headers.authorization) {
+    const [bearer, token] = req.headers.authorization.split(" ")
+
+    if (bearer !== "Bearer") {
+      return res.status(401).send({
+        error: "Invalid authorization prefix",
+      })
+    }
+
     return next()
   } else {
     return res.status(400).send({

@@ -10,3 +10,4 @@ temp
 notes.txt
 src/frontend
 *.sqlite
+coverage

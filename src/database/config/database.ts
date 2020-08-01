@@ -4,6 +4,7 @@ require(`dotenv/config`)
 module.exports = {
   dialect: `sqlite`,
   storage: `./src/database/database.sqlite`,
+  logging: true,
   define: {
     timestamps: true,
   },

@@ -14,9 +14,14 @@ module.exports = {
           model: {
             tableName: `Users`,
           },
+          onDelete: 'cascade',
           key: `id`
         },
         allowNull: false,
+      },
+      views: {
+        type: Sequelize.DataTypes.INTEGER,
+        defaultValue: 0,
       },
       file: {
         type: Sequelize.DataTypes.BLOB,

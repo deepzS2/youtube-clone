@@ -3,8 +3,57 @@ import database from "../../database"
 import { verifyToken } from "../middleware"
 import fs from "fs"
 import { JsonWebTokenError } from "jsonwebtoken"
+import { dislike, like } from "../utils/likesAndDislikes"
 
 export default {
+  /**
+   * Delete video
+   */
+  deleteVideo: async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    try {
+      const video = await database.Video.findByPk(id, {
+        include: {
+          all: true,
+          attributes: {
+            exclude: ["password"],
+          },
+        },
+        attributes: {
+          exclude: ["file"],
+        },
+      })
+
+      if (video) {
+        const token =
+          req.cookies.token || req.headers.authorization?.split(" ")[1]
+        const user_id = verifyToken(token)
+
+        if (user_id !== video.user_id) {
+          return res.status(401).send({
+            error: `You're not the owner of this video!`,
+          })
+        } else {
+          await video.destroy()
+
+          return res.send({
+            message: "Video deleted!",
+          })
+        }
+      } else {
+        return res.status(404).send({
+          error: "Video not found!",
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      return res.status(500).send({
+        error: "Something went wrong! Please try again later...",
+      })
+    }
+  },
+
   /**
    * Upload route!
    * Upload the video, with title and description.
@@ -17,6 +66,12 @@ export default {
     if (!file) {
       return res.status(400).send({
         error: `You didn't provide a file`,
+      })
+    }
+
+    if (file.mimetype !== "video/mp4") {
+      return res.status(400).send({
+        error: `You send a invalid video!`,
       })
     }
 
@@ -65,24 +120,19 @@ export default {
 
     try {
       const video = await database.Video.findByPk(id, {
+        include: {
+          all: true,
+          attributes: {
+            exclude: ["password"],
+          },
+        },
         attributes: {
           exclude: ["file"],
         },
       })
 
       if (video) {
-        const owner = await video.getOwner({
-          attributes: {
-            exclude: ["password"],
-          },
-        })
-
-        if (owner) {
-          return res.send({
-            video,
-            owner,
-          })
-        }
+        return res.send(video)
       } else {
         return res.status(404).send({
           error: "Video not found!",
@@ -107,6 +157,8 @@ export default {
       const video = await database.Video.findByPk(id)
 
       if (video) {
+        await video.increment("views")
+
         const filepath = `./temp/${video.title.replace(/\s+/g, "_")}_id-${
           video.id
         }.mp4`
@@ -149,6 +201,101 @@ export default {
 
             stream.on("error", (streamErr) => res.end(streamErr))
           })
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      return res.status(500).send({
+        error: "Something went wrong! Please try again later...",
+      })
+    }
+  },
+
+  /**
+   * Like the video
+   */
+  like: async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    try {
+      const video = await database.Video.findByPk(id, {
+        include: {
+          all: true,
+          attributes: {
+            exclude: ["password"],
+          },
+        },
+        attributes: {
+          exclude: ["file"],
+        },
+      })
+
+      const token =
+        req.cookies.token || req.headers.authorization?.split(" ")[1]
+      const user_id = verifyToken(token)
+
+      if (video) {
+        const liked = await like(video, user_id, video.id)
+
+        if (liked) {
+          return res.send({
+            message: "Video liked successfully!",
+          })
+        } else {
+          return res.status(400).send({
+            error: "You already liked this video!",
+          })
+        }
+      } else {
+        return res.status(404).send({
+          error: "Video not found!",
+        })
+      }
+    } catch (error) {
+      console.error(error)
+      return res.status(500).send({
+        error: "Something went wrong! Please try again later...",
+      })
+    }
+  },
+
+  /**
+   * If already liked, dislike the video
+   */
+  dislike: async (req: Request, res: Response) => {
+    const { id } = req.params
+
+    try {
+      const video = await database.Video.findByPk(id, {
+        include: {
+          all: true,
+          attributes: {
+            exclude: ["password"],
+          },
+        },
+        attributes: {
+          exclude: ["file"],
+        },
+      })
+
+      const token =
+        req.cookies.token || req.headers.authorization?.split(" ")[1]
+      const user_id = verifyToken(token)
+
+      if (video) {
+        const disliked = await dislike(video, user_id, video.id)
+        if (disliked) {
+          return res.send({
+            message: "Video disliked successfully!",
+          })
+        } else {
+          return res.status(400).send({
+            message: "You didn't liked this video!",
+          })
+        }
+      } else {
+        return res.status(404).send({
+          error: "Video not found!",
         })
       }
     } catch (error) {

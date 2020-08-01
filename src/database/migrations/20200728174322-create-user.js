@@ -18,6 +18,10 @@ module.exports = {
       password: {
         type: Sequelize.DataTypes.STRING,
       },
+      subscribers: {
+        type: Sequelize.DataTypes.INTEGER,
+        defaultValue: 0,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DataTypes.DATE,
