@@ -13,7 +13,16 @@ dotenv.config()
 const app = express()
 
 // CORS
-app.use(cors())
+app.options(
+  "*",
+  cors({
+    origin: "http://localhost:3000",
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true,
+    allowedHeaders:
+      "Content-Type, Authorization, X-Requested-With, X-CSRF-Token",
+  })
+)
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
